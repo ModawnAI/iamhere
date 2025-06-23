@@ -17,72 +17,10 @@ void main() {
     ),
   );
   
-  // Request camera permission immediately on app startup
-  _requestCameraPermissionOnStartup();
-  
   runApp(const MyApp());
 }
 
-/// Aggressively request camera permission on app startup
-/// This ensures iOS is immediately aware this app uses camera
-Future<void> _requestCameraPermissionOnStartup() async {
-  try {
-    // Wait for app to fully initialize
-    await Future.delayed(const Duration(milliseconds: 100));
-    
-    print('🎥 MAIN: Starting ULTRA-AGGRESSIVE camera permission requests...');
-    
-    // Method 1: Direct permission request
-    try {
-      final status1 = await Permission.camera.request();
-      print('🎥 MAIN: Direct request result: $status1');
-    } catch (e) {
-      print('🎥 MAIN: Direct request error: $e');
-    }
-    
-    // Method 2: Check then request
-    try {
-      final currentStatus = await Permission.camera.status;
-      print('🎥 MAIN: Current status: $currentStatus');
-      
-      if (currentStatus != PermissionStatus.granted) {
-        final status2 = await Permission.camera.request();
-        print('🎥 MAIN: Secondary request result: $status2');
-      }
-    } catch (e) {
-      print('🎥 MAIN: Secondary request error: $e');
-    }
-    
-    // Method 3: Multiple rapid-fire requests to force iOS recognition
-    for (int i = 0; i < 3; i++) {
-      try {
-        await Future.delayed(const Duration(milliseconds: 200));
-        final status = await Permission.camera.request();
-        print('🎥 MAIN: Rapid request $i result: $status');
-        
-        if (status == PermissionStatus.granted) {
-          print('🎥 MAIN: ✅ SUCCESS! Camera permission granted on attempt $i');
-          break;
-        }
-      } catch (e) {
-        print('🎥 MAIN: Rapid request $i error: $e');
-      }
-    }
-    
-    // Final status check
-    final finalStatus = await Permission.camera.status;
-    print('🎥 MAIN: 🏁 FINAL camera permission status: $finalStatus');
-    
-    if (finalStatus == PermissionStatus.granted) {
-      print('🎥 MAIN: 🎉 CAMERA PERMISSION SUCCESSFULLY GRANTED!');
-    } else {
-      print('🎥 MAIN: ⚠️ Camera permission not granted, but app will continue');
-    }
-    
-  } catch (e) {
-    print('🎥 MAIN: ❌ Critical error during permission requests: $e');
-  }
-}
+
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -92,45 +30,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-    // Aggressively request camera permission as soon as the app widget initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _aggressivelyRequestCameraPermission();
-    });
-  }
-
-  /// Multiple aggressive attempts to request camera permission
-  Future<void> _aggressivelyRequestCameraPermission() async {
-    print('🎥 MyApp: Starting aggressive camera permission requests...');
-    
-    // Wait a bit for the app to fully initialize
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    try {
-      // Attempt 1: Force request
-      await CameraPermissionService.forceRequestCameraPermission();
-      
-      // Attempt 2: Check and request again if needed
-      final isGranted = await CameraPermissionService.isCameraPermissionGranted();
-      if (!isGranted && mounted) {
-        print('🎥 MyApp: First attempt failed, trying comprehensive permission flow...');
-        await CameraPermissionService.ensureCameraPermission(context);
-      }
-      
-      // Attempt 3: One more force request to be absolutely sure
-      await Future.delayed(const Duration(milliseconds: 1000));
-      await CameraPermissionService.forceRequestCameraPermission();
-      
-      // Final status check
-      final finalStatus = await CameraPermissionService.isCameraPermissionGranted();
-      print('🎥 MyApp: Final camera permission status: $finalStatus');
-      
-    } catch (e) {
-      print('🎥 MyApp: Error during aggressive permission requests: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

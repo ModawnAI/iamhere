@@ -51,5 +51,11 @@
 	<string>This app needs photo library access to select 3D model files</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>IAMHERE may use microphone for enhanced AR features</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app uses the local network to connect with Flutter development tools for debugging and hot reload functionality during development.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dart-observatory._tcp</string>
+	</array>
 </dict>
 </plist>

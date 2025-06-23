@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 /// Singleton class for managing global application state
 class AppState {
   // Private constructor to prevent direct instantiation
   AppState._() {
-    // Automatically preload the Nike 3D model
+    // Initialize app state
     _preloadModel();
   }
   
@@ -21,9 +24,38 @@ class AppState {
   final ValueNotifier<String?> selectedModelPath = ValueNotifier<String?>(null);
   
   // Preload the Nike 3D model automatically
-  void _preloadModel() {
-    // Set the path to the preloaded Nike model
-    selectedModelPath.value = 'lib/data/nike.glb';
+  Future<void> _preloadModel() async {
+    try {
+      print('📦 Starting to preload Nike model...');
+      
+      // Get the app's temporary directory
+      final tempDir = await getTemporaryDirectory();
+      final modelPath = '${tempDir.path}/nike.glb';
+      
+      // Check if the model already exists in temp directory
+      final modelFile = File(modelPath);
+      if (!modelFile.existsSync()) {
+        print('📦 Copying model from assets to temp directory...');
+        
+        // Load the asset
+        final data = await rootBundle.load('assets/nike.glb');
+        final bytes = data.buffer.asUint8List();
+        
+        // Write to temporary file
+        await modelFile.writeAsBytes(bytes);
+        print('📦 Model copied successfully to: $modelPath');
+      } else {
+        print('📦 Model already exists in temp directory');
+      }
+      
+      // Set the model path
+      selectedModelPath.value = modelPath;
+      print('📦 Nike model preloaded successfully!');
+      
+    } catch (e) {
+      print('❌ Error preloading model: $e');
+      // Don't set a model path if loading fails
+    }
   }
   
   // Method to update the selected model path

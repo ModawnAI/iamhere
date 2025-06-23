@@ -45,29 +45,6 @@ class _HomeScreenState extends State<HomeScreen>
     ));
     
     _animationController.forward();
-    
-    // AGGRESSIVE: Request camera permission as soon as home screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _requestCameraPermissionOnHomeLoad();
-    });
-  }
-  
-  /// Request camera permission when home screen loads to ensure iOS knows about it
-  Future<void> _requestCameraPermissionOnHomeLoad() async {
-    try {
-      print('🎥 HomeScreen: Proactively requesting camera permission...');
-      
-      // Wait for the home screen to settle, then request permission
-      await Future.delayed(const Duration(milliseconds: 2000));
-      
-      if (mounted) {
-        // Force a camera permission request to ensure iOS is aware
-        await CameraPermissionService.forceRequestCameraPermission();
-        print('🎥 HomeScreen: Camera permission request completed');
-      }
-    } catch (e) {
-      print('🎥 HomeScreen: Error requesting camera permission: $e');
-    }
   }
   
   @override
