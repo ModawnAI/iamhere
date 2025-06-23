@@ -16,22 +16,21 @@ class PseudoArScreen extends StatefulWidget {
   State<PseudoArScreen> createState() => _PseudoArScreenState();
 }
 
-class _PseudoArScreenState extends State<PseudoArScreen>
-    with WidgetsBindingObserver, TickerProviderStateMixin {
+class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObserver, TickerProviderStateMixin {
   CameraController? _cameraController;
   List<CameraDescription> _cameras = [];
   bool _isCameraInitialized = false;
   bool _isLoading = true;
   String? _errorMessage;
   int _selectedCameraIndex = 0;
-  
+
   // Performance monitoring
   DateTime? _modelLoadStartTime;
   bool _isModelLoading = false;
   int _frameCount = 0;
   DateTime? _lastFrameTime;
   double _currentFPS = 0.0;
-  
+
   // Resource management
   Timer? _performanceTimer;
   bool _isLowPerformanceMode = false;
@@ -65,7 +64,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
 
   void _updatePerformanceMetrics() {
     if (!mounted) return;
-    
+
     // Simple frame rate estimation based on UI updates
     final now = DateTime.now();
     if (_lastFrameTime != null) {
@@ -73,7 +72,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
       if (timeDiff > 0) {
         _currentFPS = 1000 / timeDiff;
         _frameCount++;
-        
+
         // Enable low performance mode if FPS is consistently low
         if (_currentFPS < 15 && _frameCount > 10) {
           _enableLowPerformanceMode();
@@ -88,21 +87,17 @@ class _PseudoArScreenState extends State<PseudoArScreen>
       setState(() {
         _isLowPerformanceMode = true;
       });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Performance mode enabled for smoother experience'),
-          backgroundColor: Colors.orange.withValues(alpha: 0.8),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: const Text('Performance mode enabled for smoother experience'), backgroundColor: Colors.orange.withValues(alpha: 0.8), duration: const Duration(seconds: 3)));
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final controller = _cameraController;
-    
+
     if (state == AppLifecycleState.inactive) {
       if (controller != null && controller.value.isInitialized) {
         _disposeCamera();
@@ -142,16 +137,13 @@ class _PseudoArScreenState extends State<PseudoArScreen>
       }
 
       // Select back camera (preferred for AR) or first available
-      _selectedCameraIndex = _cameras.indexWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.back,
-      );
+      _selectedCameraIndex = _cameras.indexWhere((camera) => camera.lensDirection == CameraLensDirection.back);
       if (_selectedCameraIndex == -1) {
         _selectedCameraIndex = 0;
       }
 
       // Initialize camera controller
       await _setupCameraController(_cameras[_selectedCameraIndex]);
-
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to initialize camera: ${e.toString()}';
@@ -201,13 +193,12 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     try {
       // Set focus mode to continuous for AR tracking
       await _cameraController!.setFocusMode(FocusMode.auto);
-      
+
       // Set exposure mode to auto for consistent lighting
       await _cameraController!.setExposureMode(ExposureMode.auto);
-      
+
       // Disable flash for AR experience
       await _cameraController!.setFlashMode(FlashMode.off);
-
     } catch (e) {
       // Camera parameter setting is not critical, continue without error
       debugPrint('Warning: Could not set camera parameters: $e');
@@ -218,12 +209,12 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     try {
       // First check current status
       PermissionStatus status = await Permission.camera.status;
-      
+
       // If permission hasn't been granted, request it
       if (status != PermissionStatus.granted) {
         status = await Permission.camera.request();
       }
-      
+
       // If permission is denied but not permanently, show explanation and request
       if (status.isDenied) {
         // Show a dialog explaining why we need camera permission
@@ -231,17 +222,17 @@ class _PseudoArScreenState extends State<PseudoArScreen>
         if (!shouldRequest) {
           return false;
         }
-        
+
         // Request permission again
         status = await Permission.camera.request();
       }
-      
+
       // If permission is permanently denied, guide user to settings
       if (status.isPermanentlyDenied) {
         _showPermissionDialog();
         return false;
       }
-      
+
       // If still denied after request, show error
       if (status.isDenied) {
         setState(() {
@@ -249,7 +240,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
         });
         return false;
       }
-      
+
       return status.isGranted;
     } catch (e) {
       setState(() {
@@ -261,26 +252,21 @@ class _PseudoArScreenState extends State<PseudoArScreen>
 
   Future<bool> _showPermissionExplanationDialog() async {
     return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Camera Permission Needed'),
-          content: const Text(
-            'This app needs access to your camera to provide an augmented reality experience. The camera lets you see your real environment with virtual objects overlaid on top.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Allow Camera'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Camera Permission Needed'),
+              content: const Text(
+                'This app needs access to your camera to provide an augmented reality experience. The camera lets you see your real environment with virtual objects overlaid on top.',
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+                TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Allow Camera')),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   Future<void> _disposeCamera() async {
@@ -310,26 +296,20 @@ class _PseudoArScreenState extends State<PseudoArScreen>
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.warning, color: Colors.orange),
-              const SizedBox(width: 8),
-              const Text('Camera Permission Required'),
-            ],
-          ),
+          title: Row(children: [Icon(Icons.warning, color: Colors.orange), const SizedBox(width: 8), const Text('Camera Permission Required')]),
           content: Text(
-            Platform.isIOS 
-              ? 'Camera access is required for AR features. To enable:\n\n'
-                '1. Tap "Open Settings" below\n'
-                '2. Find "Iamhere Demo" in the list\n'
-                '3. Toggle ON the Camera permission\n'
-                '4. Return to this app\n\n'
-                'The Camera option should appear in Settings after you allow it.'
-              : 'Camera access has been permanently denied. To use the AR feature, please:\n\n'
-                '1. Go to Settings\n'
-                '2. Find this app\n'
-                '3. Enable Camera permission\n'
-                '4. Return to the app',
+            Platform.isIOS
+                ? 'Camera access is required for AR features. To enable:\n\n'
+                    '1. Tap "Open Settings" below\n'
+                    '2. Find "Iamhere Demo" in the list\n'
+                    '3. Toggle ON the Camera permission\n'
+                    '4. Return to this app\n\n'
+                    'The Camera option should appear in Settings after you allow it.'
+                : 'Camera access has been permanently denied. To use the AR feature, please:\n\n'
+                    '1. Go to Settings\n'
+                    '2. Find this app\n'
+                    '3. Enable Camera permission\n'
+                    '4. Return to the app',
           ),
           actions: [
             TextButton(
@@ -361,18 +341,8 @@ class _PseudoArScreenState extends State<PseudoArScreen>
         foregroundColor: Colors.white,
         elevation: 0,
         title: const Text('AR Experience'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          if (_cameras.length > 1 && _isCameraInitialized)
-            IconButton(
-              icon: const Icon(Icons.switch_camera),
-              onPressed: _switchCamera,
-              tooltip: 'Switch Camera',
-            ),
-        ],
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).pop()),
+        actions: [if (_cameras.length > 1 && _isCameraInitialized) IconButton(icon: const Icon(Icons.switch_camera), onPressed: _switchCamera, tooltip: 'Switch Camera')],
       ),
       body: _buildBody(),
       floatingActionButton: ValueListenableBuilder<String?>(
@@ -382,20 +352,14 @@ class _PseudoArScreenState extends State<PseudoArScreen>
           if (modelPath == null) {
             return const SizedBox.shrink();
           }
-          
+
           return FloatingActionButton.extended(
             onPressed: _showReviewsDialog,
             backgroundColor: Colors.black.withValues(alpha: 0.8),
             foregroundColor: Colors.white,
             icon: const Icon(Icons.rate_review),
             label: const Text('See Reviews'),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-              side: BorderSide(
-                color: Colors.white.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25), side: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 1)),
           );
         },
       ),
@@ -421,16 +385,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
 
   Widget _buildLoadingWidget() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black,
-            Colors.grey.shade900,
-          ],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black, Colors.grey.shade900])),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -450,38 +405,24 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 5)],
                       ),
-                      child: const Icon(
-                        Icons.view_in_ar,
-                        color: Colors.black,
-                        size: 40,
-                      ),
+                      child: const Icon(Icons.view_in_ar, color: Colors.black, size: 40),
                     ),
                   ),
                 );
               },
             ),
             const SizedBox(height: 32),
-            
+
             // Loading indicator with custom styling
             SizedBox(
               width: 40,
               height: 40,
-              child: CircularProgressIndicator(
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                strokeWidth: 3,
-                backgroundColor: Colors.white.withValues(alpha: 0.2),
-              ),
+              child: CircularProgressIndicator(valueColor: const AlwaysStoppedAnimation<Color>(Colors.white), strokeWidth: 3, backgroundColor: Colors.white.withValues(alpha: 0.2)),
             ),
             const SizedBox(height: 24),
-            
+
             // Loading text with animation
             TweenAnimationBuilder(
               duration: const Duration(seconds: 1),
@@ -491,33 +432,14 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                   opacity: value,
                   child: Column(
                     children: [
-                      const Text(
-                        'IAMHERE AR',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
-                      ),
+                      const Text('IAMHERE AR', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
                       const SizedBox(height: 8),
-                      Text(
-                        'Initializing Camera...',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
+                      Text('Initializing Camera...', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.w400)),
                       const SizedBox(height: 16),
                       Text(
                         'Please allow camera access for AR experience',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w300,
-                        ),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14, fontWeight: FontWeight.w300),
                       ),
                     ],
                   ),
@@ -532,16 +454,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
 
   Widget _buildErrorWidget() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.red.shade900.withValues(alpha: 0.8),
-            Colors.black,
-          ],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.red.shade900.withValues(alpha: 0.8), Colors.black])),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -561,49 +474,23 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                       decoration: BoxDecoration(
                         color: Colors.red.shade600,
                         borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.red.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 5)],
                       ),
-                      child: const Icon(
-                        Icons.camera_alt_outlined,
-                        color: Colors.white,
-                        size: 50,
-                      ),
+                      child: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 50),
                     ),
                   );
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Error title
-              const Text(
-                'Camera Access Required',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
+              const Text('Camera Access Required', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1)),
               const SizedBox(height: 16),
-              
+
               // Error message
-              Text(
-                _getErrorDescription(_errorMessage ?? 'Unknown error'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 16,
-                  height: 1.5,
-                ),
-              ),
+              Text(_getErrorDescription(_errorMessage ?? 'Unknown error'), textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 16, height: 1.5)),
               const SizedBox(height: 32),
-              
+
               // Action buttons
               Column(
                 children: [
@@ -621,14 +508,12 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Settings button (for permission issues)
                   if (_errorMessage?.contains('permission') == true)
                     SizedBox(
@@ -644,25 +529,19 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                           foregroundColor: Colors.white,
                           side: const BorderSide(color: Colors.white),
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Help text
               Text(
                 'IAMHERE needs camera access to provide AR experiences',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14, fontStyle: FontStyle.italic),
               ),
             ],
           ),
@@ -691,13 +570,11 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     return Stack(
       children: [
         // Layer 1: Camera preview as background
-        SizedBox.expand(
-          child: CameraPreview(_cameraController!),
-        ),
-        
+        SizedBox.expand(child: CameraPreview(_cameraController!)),
+
         // Layer 2: 3D Model overlay (center positioned for AR effect)
         _build3DModelOverlay(),
-        
+
         // Layer 3: UI controls and information overlay
         _buildUIOverlay(),
       ],
@@ -709,12 +586,9 @@ class _PseudoArScreenState extends State<PseudoArScreen>
       valueListenable: AppState.instance.selectedModelPath,
       builder: (context, modelPath, _) {
         if (modelPath == null) {
-          return const SizedBox.shrink(); // No model loaded
+          return const SizedBox.shrink();
         }
-        
-        return Center(
-          child: _build3DModelViewer(modelPath),
-        );
+        return ModelViewer(src: 'file://$modelPath', backgroundColor: Colors.transparent, cameraControls: true);
       },
     );
   }
@@ -726,29 +600,13 @@ class _PseudoArScreenState extends State<PseudoArScreen>
         return Stack(
           children: [
             // Model status indicator (top)
-            Positioned(
-              top: 20,
-              left: 20,
-              right: 20,
-              child: _buildModelStatusIndicator(modelPath),
-            ),
-            
+            Positioned(top: 20, left: 20, right: 20, child: _buildModelStatusIndicator(modelPath)),
+
             // AR controls (bottom)
-            Positioned(
-              bottom: 100,
-              left: 20,
-              right: 20,
-              child: _buildARControls(modelPath),
-            ),
-            
+            Positioned(bottom: 100, left: 20, right: 20, child: _buildARControls(modelPath)),
+
             // Instructions overlay (center-bottom)
-            if (modelPath != null)
-              Positioned(
-                bottom: 30,
-                left: 20,
-                right: 20,
-                child: _buildInstructionsOverlay(),
-              ),
+            if (modelPath != null) Positioned(bottom: 30, left: 20, right: 20, child: _buildInstructionsOverlay()),
           ],
         );
       },
@@ -758,33 +616,16 @@ class _PseudoArScreenState extends State<PseudoArScreen>
   Widget _buildModelStatusIndicator(String? modelPath) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            modelPath != null ? Icons.check_circle : Icons.error,
-            color: modelPath != null ? Colors.green : Colors.orange,
-            size: 20,
-          ),
+          Icon(modelPath != null ? Icons.check_circle : Icons.error, color: modelPath != null ? Colors.green : Colors.orange, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              modelPath != null 
-                  ? 'AR Model: ${modelPath.split('/').last}'
-                  : 'No AR model loaded',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              modelPath != null ? 'AR Model: ${modelPath.split('/').last}' : 'No AR model loaded',
+              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -804,30 +645,20 @@ class _PseudoArScreenState extends State<PseudoArScreen>
             label: 'Reset',
             onTap: () {
               // Reset model position functionality can be added here
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Model position reset'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Model position reset'), duration: Duration(seconds: 1)));
             },
           ),
-        
+
         // Take photo button
         _buildControlButton(
           icon: Icons.camera_alt,
           label: 'Photo',
           onTap: () {
             // Photo capture functionality can be added here
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Photo capture coming soon'),
-                duration: Duration(seconds: 1),
-              ),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photo capture coming soon'), duration: Duration(seconds: 1)));
           },
         ),
-        
+
         // Performance toggle button
         _buildControlButton(
           icon: _isLowPerformanceMode ? Icons.speed : Icons.high_quality,
@@ -836,16 +667,12 @@ class _PseudoArScreenState extends State<PseudoArScreen>
             setState(() {
               _isLowPerformanceMode = !_isLowPerformanceMode;
             });
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(_isLowPerformanceMode 
-                    ? 'Performance mode enabled - reduced quality for better framerate'
-                    : 'Quality mode enabled - enhanced visuals'),
+                content: Text(_isLowPerformanceMode ? 'Performance mode enabled - reduced quality for better framerate' : 'Quality mode enabled - enhanced visuals'),
                 duration: const Duration(seconds: 2),
-                backgroundColor: _isLowPerformanceMode 
-                    ? Colors.blue.withValues(alpha: 0.8)
-                    : Colors.green.withValues(alpha: 0.8),
+                backgroundColor: _isLowPerformanceMode ? Colors.blue.withValues(alpha: 0.8) : Colors.green.withValues(alpha: 0.8),
               ),
             );
           },
@@ -863,41 +690,15 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     );
   }
 
-  Widget _buildControlButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildControlButton({required IconData icon, required String label, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(25), border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+          children: [Icon(icon, color: Colors.white, size: 24), const SizedBox(height: 4), Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500))],
         ),
       ),
     );
@@ -906,18 +707,8 @@ class _PseudoArScreenState extends State<PseudoArScreen>
   Widget _buildInstructionsOverlay() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Text(
-        'Drag to rotate • Pinch to zoom • Tap controls for options',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 12,
-        ),
-      ),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(16)),
+      child: const Text('Drag to rotate • Pinch to zoom • Tap controls for options', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 12)),
     );
   }
 
@@ -936,7 +727,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     final file = File(modelPath);
     final fileSizeBytes = file.lengthSync();
     final fileSizeMB = fileSizeBytes / (1024 * 1024);
-    
+
     return SizedBox(
       height: 300,
       width: 300,
@@ -951,32 +742,28 @@ class _PseudoArScreenState extends State<PseudoArScreen>
               ModelViewer(
                 // Set the source to the local file path
                 src: 'file://$modelPath',
-                
+
                 // Configure for AR overlay experience
                 backgroundColor: const Color(0x00000000), // Transparent background
-                
                 // Enhanced gesture controls
                 cameraControls: true,
                 autoRotate: false, // Let user control rotation manually
-                
                 // Gesture and interaction settings
                 disableZoom: false,
                 disablePan: false, // Allow panning for better control
-                
                 // Loading and performance settings
                 loading: Loading.eager,
                 autoPlay: true,
-                
+
                 // Enhanced camera and interaction settings
                 cameraOrbit: "0deg 75deg 1.5m", // Default camera position
                 fieldOfView: "30deg", // Narrow field for AR effect
                 minCameraOrbit: "auto auto 0.5m", // Minimum zoom distance
                 maxCameraOrbit: "auto auto 5m", // Maximum zoom distance
-                
                 // Performance and optimization settings
                 shadowIntensity: _isLowPerformanceMode ? 0.0 : 0.3,
                 shadowSoftness: _isLowPerformanceMode ? 0.0 : 0.25,
-                
+
                 // Error handling callback
                 onWebViewCreated: (controller) {
                   _modelLoadStartTime = DateTime.now();
@@ -986,14 +773,14 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                   debugPrint('Performance mode: ${_isLowPerformanceMode ? "Enabled" : "Disabled"}');
                   _startPerformanceMonitoring();
                   _showGestureHint();
-                  
+
                   // Simulate model loading completion after a delay
                   Timer(const Duration(seconds: 2), () {
                     if (mounted) _onModelLoaded();
                   });
                 },
               ),
-              
+
               // Performance indicators
               Positioned(
                 top: 8,
@@ -1006,74 +793,37 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                       Container(
                         margin: const EdgeInsets.only(bottom: 4),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Large file (${fileSizeMB.toStringAsFixed(1)}MB)',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(4)),
+                        child: Text('Large file (${fileSizeMB.toStringAsFixed(1)}MB)', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                       ),
-                    
+
                     // Performance mode indicator
                     if (_isLowPerformanceMode)
                       Container(
                         margin: const EdgeInsets.only(bottom: 4),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'Performance Mode',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(4)),
+                        child: const Text('Performance Mode', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                       ),
-                    
+
                     // Loading indicator
                     if (_isModelLoading)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                        decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(4)),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            SizedBox(
-                              width: 10,
-                              height: 10,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
+                            SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
                             SizedBox(width: 4),
-                            Text(
-                              'Loading',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            Text('Loading', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
                   ],
                 ),
               ),
-              
+
               // Gesture feedback overlay
               _buildGestureFeedback(),
             ],
@@ -1085,35 +835,25 @@ class _PseudoArScreenState extends State<PseudoArScreen>
 
   void _handleModelTap() {
     debugPrint('Model tapped - show interaction hint');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Drag to rotate • Pinch to zoom • Double-tap to reset'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.black.withValues(alpha: 0.8),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: const Text('Drag to rotate • Pinch to zoom • Double-tap to reset'), duration: const Duration(seconds: 2), backgroundColor: Colors.black.withValues(alpha: 0.8)));
   }
 
   void _handleModelDoubleTap() {
     debugPrint('Model double-tapped - reset position');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Model position reset'),
-        duration: const Duration(seconds: 1),
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Model position reset'), duration: const Duration(seconds: 1), backgroundColor: Colors.green.withValues(alpha: 0.8)));
   }
 
   void _onModelLoaded() {
     if (_modelLoadStartTime != null) {
       final loadTime = DateTime.now().difference(_modelLoadStartTime!);
       debugPrint('Model loaded in ${loadTime.inMilliseconds}ms');
-      
+
       setState(() {
         _isModelLoading = false;
       });
-      
+
       // Show performance feedback for very slow loads
       if (loadTime.inSeconds > 5) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1142,14 +882,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Model Options',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const Text('Model Options', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               _buildOptionButton(
                 icon: Icons.refresh,
@@ -1166,9 +899,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                 subtitle: 'Focus on model center',
                 onTap: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Model centered')),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Model centered')));
                 },
               ),
               _buildOptionButton(
@@ -1187,12 +918,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     );
   }
 
-  Widget _buildOptionButton({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildOptionButton({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
     return ListTile(
       leading: Icon(icon, color: Colors.white),
       title: Text(title, style: const TextStyle(color: Colors.white)),
@@ -1202,15 +928,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
   }
 
   Widget _buildGestureFeedback() {
-    return const Positioned(
-      bottom: 8,
-      left: 8,
-      child: Icon(
-        Icons.touch_app,
-        color: Colors.white54,
-        size: 16,
-      ),
-    );
+    return const Positioned(bottom: 8, left: 8, child: Icon(Icons.touch_app, color: Colors.white54, size: 16));
   }
 
   void _showGestureHint() {
@@ -1219,11 +937,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
         content: const Text('Gestures: Drag = Rotate • Pinch = Zoom • Double-tap = Reset • Long-press = Options'),
         duration: const Duration(seconds: 3),
         backgroundColor: Colors.blue.withValues(alpha: 0.8),
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
+        action: SnackBarAction(label: 'OK', textColor: Colors.white, onPressed: () {}),
       ),
     );
   }
@@ -1231,80 +945,45 @@ class _PseudoArScreenState extends State<PseudoArScreen>
   Map<String, dynamic>? _validateModelFile(String modelPath) {
     try {
       final file = File(modelPath);
-      
+
       // Check if file exists
       if (!file.existsSync()) {
-        return {
-          'message': 'Model file not found. The file may have been moved or deleted.',
-          'type': 'file_not_found',
-          'canRetry': true,
-          'onRetry': () => _retryModelLoading(),
-        };
+        return {'message': 'Model file not found. The file may have been moved or deleted.', 'type': 'file_not_found', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
       }
 
       // Check file extension
       final extension = modelPath.toLowerCase().split('.').last;
       if (!['glb', 'gltf'].contains(extension)) {
-        return {
-          'message': 'Unsupported file format. Only .glb and .gltf files are supported.',
-          'type': 'invalid_format',
-          'canRetry': false,
-          'onRetry': null,
-        };
+        return {'message': 'Unsupported file format. Only .glb and .gltf files are supported.', 'type': 'invalid_format', 'canRetry': false, 'onRetry': null};
       }
 
       // Check file size limits
       final fileSizeBytes = file.lengthSync();
       final fileSizeMB = fileSizeBytes / (1024 * 1024);
-      
+
       if (fileSizeMB > 50) {
-        return {
-          'message': 'File too large (${fileSizeMB.toStringAsFixed(1)}MB). Files over 50MB are not supported.',
-          'type': 'file_too_large',
-          'canRetry': false,
-          'onRetry': null,
-        };
+        return {'message': 'File too large (${fileSizeMB.toStringAsFixed(1)}MB). Files over 50MB are not supported.', 'type': 'file_too_large', 'canRetry': false, 'onRetry': null};
       }
 
       // Check if file is corrupted (basic check)
       if (fileSizeBytes < 100) {
-        return {
-          'message': 'File appears to be corrupted or empty.',
-          'type': 'corrupted_file',
-          'canRetry': true,
-          'onRetry': () => _retryModelLoading(),
-        };
+        return {'message': 'File appears to be corrupted or empty.', 'type': 'corrupted_file', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
       }
 
       // Check file permissions
       try {
         final bytes = file.readAsBytesSync().take(10).toList();
         if (bytes.isEmpty) {
-          return {
-            'message': 'Cannot read file. Check file permissions.',
-            'type': 'permission_denied',
-            'canRetry': true,
-            'onRetry': () => _retryModelLoading(),
-          };
+          return {'message': 'Cannot read file. Check file permissions.', 'type': 'permission_denied', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
         }
       } catch (e) {
-        return {
-          'message': 'File access error: ${e.toString()}',
-          'type': 'access_error',
-          'canRetry': true,
-          'onRetry': () => _retryModelLoading(),
-        };
+        return {'message': 'File access error: ${e.toString()}', 'type': 'access_error', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
       }
 
       return null; // File is valid
     } catch (e) {
       debugPrint('Model validation error: $e');
-      return {
-        'message': 'Unexpected error during file validation: ${e.toString()}',
-        'type': 'validation_error',
-        'canRetry': true,
-        'onRetry': () => _retryModelLoading(),
-      };
+      return {'message': 'Unexpected error during file validation: ${e.toString()}', 'type': 'validation_error', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
     }
   }
 
@@ -1312,14 +991,8 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     setState(() {
       _isModelLoading = true;
     });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Retrying model load...'),
-        backgroundColor: Colors.blue.withValues(alpha: 0.8),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Retrying model load...'), backgroundColor: Colors.blue.withValues(alpha: 0.8), duration: const Duration(seconds: 1)));
 
     // Force a rebuild after a short delay
     Timer(const Duration(milliseconds: 500), () {
@@ -1331,15 +1004,10 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     });
   }
 
-  Widget _buildModelErrorWidget(
-    String message, {
-    required String errorType,
-    required bool canRetry,
-    VoidCallback? onRetry,
-  }) {
+  Widget _buildModelErrorWidget(String message, {required String errorType, required bool canRetry, VoidCallback? onRetry}) {
     Color errorColor;
     IconData errorIcon;
-    
+
     switch (errorType) {
       case 'file_not_found':
         errorColor = Colors.orange;
@@ -1370,53 +1038,24 @@ class _PseudoArScreenState extends State<PseudoArScreen>
       height: 300,
       width: 300,
       child: Container(
-        decoration: BoxDecoration(
-          color: errorColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: errorColor.withValues(alpha: 0.5),
-            width: 2,
-          ),
-        ),
+        decoration: BoxDecoration(color: errorColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: errorColor.withValues(alpha: 0.5), width: 2)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                errorIcon,
-                color: errorColor,
-                size: 48,
-              ),
+              Icon(errorIcon, color: errorColor, size: 48),
               const SizedBox(height: 12),
-              Text(
-                'Model Error',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text('Model Error', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
+              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12)),
               if (canRetry && onRetry != null) ...[
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh, size: 16),
                   label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: errorColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: errorColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
                 ),
               ],
               const SizedBox(height: 12),
@@ -1424,20 +1063,9 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                 onPressed: () {
                   // Navigate back to load model screen
                   AppState.instance.selectedModelPath.value = null;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Returned to model selection'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Returned to model selection'), duration: Duration(seconds: 1)));
                 },
-                child: const Text(
-                  'Select Different Model',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
+                child: const Text('Select Different Model', style: TextStyle(color: Colors.white70, fontSize: 12)),
               ),
             ],
           ),
@@ -1450,12 +1078,8 @@ class _PseudoArScreenState extends State<PseudoArScreen>
   void _showReviewsDialog() {
     // Add haptic feedback for better UX
     HapticFeedback.lightImpact();
-    
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (BuildContext context) => _buildReviewsDialog(),
-    );
+
+    showDialog(context: context, barrierColor: Colors.black.withValues(alpha: 0.7), builder: (BuildContext context) => _buildReviewsDialog());
   }
 
   /// Build the reviews dialog widget
@@ -1463,29 +1087,17 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        constraints: const BoxConstraints(
-          maxHeight: 600,
-          maxWidth: 400,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
+        constraints: const BoxConstraints(maxHeight: 600, maxWidth: 400),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.95), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Dialog header
             _buildReviewsDialogHeader(),
-            
+
             // Reviews list
-            Flexible(
-              child: _buildReviewsList(),
-            ),
-            
+            Flexible(child: _buildReviewsList()),
+
             // Dialog footer
             _buildReviewsDialogFooter(),
           ],
@@ -1498,49 +1110,21 @@ class _PseudoArScreenState extends State<PseudoArScreen>
   Widget _buildReviewsDialogHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
-      ),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1))),
       child: Row(
         children: [
-          const Icon(
-            Icons.rate_review,
-            color: Colors.white,
-            size: 24,
-          ),
+          const Icon(Icons.rate_review, color: Colors.white, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Customer Reviews',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  DummyData.productName,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
-                ),
+                const Text('Customer Reviews', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(DummyData.productName, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close),
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
+          IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close), color: Colors.white.withValues(alpha: 0.7)),
         ],
       ),
     );
@@ -1548,12 +1132,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
 
   /// Build the scrollable reviews list
   Widget _buildReviewsList() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Column(
-        children: DummyData.reviewsList.map((review) => _buildReviewItem(review)).toList(),
-      ),
-    );
+    return SingleChildScrollView(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), child: Column(children: DummyData.reviewsList.map((review) => _buildReviewItem(review)).toList()));
   }
 
   /// Build an individual review item
@@ -1561,14 +1140,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1579,21 +1151,8 @@ class _PseudoArScreenState extends State<PseudoArScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      review.userName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      review.date,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(review.userName, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(review.date, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
                   ],
                 ),
               ),
@@ -1601,50 +1160,25 @@ class _PseudoArScreenState extends State<PseudoArScreen>
               _buildStarRating(review.rating),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Review title
-          Text(
-            review.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          
+          Text(review.title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+
           const SizedBox(height: 6),
-          
+
           // Review comment
-          Text(
-            review.comment,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 13,
-              height: 1.4,
-            ),
-          ),
-          
+          Text(review.comment, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.4)),
+
           // Verified purchase badge
           if (review.isVerifiedPurchase) ...[
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  Icons.verified,
-                  color: Colors.green.withValues(alpha: 0.8),
-                  size: 14,
-                ),
+                Icon(Icons.verified, color: Colors.green.withValues(alpha: 0.8), size: 14),
                 const SizedBox(width: 4),
-                Text(
-                  'Verified Purchase',
-                  style: TextStyle(
-                    color: Colors.green.withValues(alpha: 0.8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text('Verified Purchase', style: TextStyle(color: Colors.green.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w500)),
               ],
             ),
           ],
@@ -1658,11 +1192,7 @@ class _PseudoArScreenState extends State<PseudoArScreen>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
-        return Icon(
-          index < rating ? Icons.star : Icons.star_border,
-          color: Colors.amber,
-          size: 16,
-        );
+        return Icon(index < rating ? Icons.star : Icons.star_border, color: Colors.amber, size: 16);
       }),
     );
   }
@@ -1670,45 +1200,22 @@ class _PseudoArScreenState extends State<PseudoArScreen>
   /// Build the footer section of the reviews dialog
   Widget _buildReviewsDialogFooter() {
     // Calculate average rating
-    final totalRating = DummyData.reviewsList.fold<int>(
-      0, 
-      (sum, review) => sum + review.rating,
-    );
+    final totalRating = DummyData.reviewsList.fold<int>(0, (sum, review) => sum + review.rating);
     final averageRating = totalRating / DummyData.reviewsList.length;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
-      ),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1))),
       child: Row(
         children: [
           // Average rating display
           _buildStarRating(averageRating.round()),
           const SizedBox(width: 8),
-          Text(
-            '${averageRating.toStringAsFixed(1)} out of 5',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text('${averageRating.toStringAsFixed(1)} out of 5', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w500)),
           const Spacer(),
-          Text(
-            '${DummyData.reviewsList.length} reviews',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 12,
-            ),
-          ),
+          Text('${DummyData.reviewsList.length} reviews', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
         ],
       ),
     );
   }
-} 
+}

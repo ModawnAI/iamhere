@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Permissions for camera and file operations -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- Indicates that this app requires a camera with ARCore support. -->
+    <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
+
     <application
         android:label="iamhere_demo"
         android:name="${applicationName}"
@@ -34,6 +39,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Indicates that this app is AR-required. -->
+        <meta-data android:name="com.google.ar.core" android:value="required" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
