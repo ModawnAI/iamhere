@@ -1,5 +1,6 @@
 // Environment variables for Flutter web
-// This file is generated at build time by Vercel
+// TODO: After uploading to Vercel Blob, replace the empty string with your Blob URL
+// Example: NIKE_2_GLB_URL: 'https://xxxxx.public.blob.vercel-storage.com/nike_2.glb'
 window.ENV = {
-  NIKE_2_GLB_URL: '__NIKE_2_GLB_URL__'
+  NIKE_2_GLB_URL: ''  // Empty = use fallback nike.glb (2.7MB)
 };

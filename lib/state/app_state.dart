@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:iamhere_demo/utils/env_helper.dart';
 
 /// Singleton class for managing global application state
 class AppState {
@@ -31,10 +32,10 @@ class AppState {
       // On web, use Vercel Blob URL for large files or fallback to small asset
       if (kIsWeb) {
         print('📦 Web platform detected - using web configuration');
-        // The URL will be injected by env.js loaded in index.html
-        // For now, use the smaller model as fallback
-        selectedModelPath.value = 'nike.glb'; // Will be overridden by env.js if available
-        print('📦 Nike model path set for web: nike.glb (check console for env.js override)');
+        final modelPath = EnvHelper.getNike2GlbUrl();
+        selectedModelPath.value = modelPath;
+        print('📦 Nike model path set for web: $modelPath');
+        print('📦 To use Blob URL: Upload to Vercel Blob and edit web/env.js');
         return;
       }
 

@@ -1,6 +1,5 @@
 {
   "github": {
     "silent": true
-  },
-  "buildCommand": "echo \"window.ENV = { NIKE_2_GLB_URL: '$NIKE_2_GLB_URL' };\" > build/web/env.js"
+  }
 }
