@@ -70704,7 +70704,7 @@ $.oD().kA()},
 $S:0}
 A.acU.prototype={
 $3(a,b,c){if(b==null)return B.d_
-return new A.w8(b,!0,!1,!1,B.E,null)},
+return new A.w8("assets/"+b,!0,!1,!1,B.E,null)},
 $S:129}
 A.ad7.prototype={
 $3(a,b,c){var s,r=null,q=B.j.bp(0.6),p=A.cY(20),o=A.oS(B.h.bp(0.2),1),n=b!=null,m=n?B.iw:B.Da
