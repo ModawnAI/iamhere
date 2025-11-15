@@ -7,7 +7,6 @@ import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:iamhere_demo/state/app_state.dart';
 import 'package:iamhere_demo/data/dummy_data.dart';
 import 'dart:async';
-import 'dart:io';
 
 /// Pseudo AR screen with camera preview and 3D model overlay
 class PseudoArScreen extends StatefulWidget {
@@ -25,15 +24,7 @@ class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObse
   String? _errorMessage;
   int _selectedCameraIndex = 0;
 
-  // Performance monitoring
-  DateTime? _modelLoadStartTime;
-  bool _isModelLoading = false;
-  int _frameCount = 0;
-  DateTime? _lastFrameTime;
-  double _currentFPS = 0.0;
-
-  // Resource management
-  Timer? _performanceTimer;
+  // Performance mode
   bool _isLowPerformanceMode = false;
 
   @override
@@ -47,52 +38,7 @@ class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObse
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _disposeCamera();
-    _cleanupPerformanceMonitoring();
     super.dispose();
-  }
-
-  void _cleanupPerformanceMonitoring() {
-    _performanceTimer?.cancel();
-    _performanceTimer = null;
-  }
-
-  void _startPerformanceMonitoring() {
-    _performanceTimer?.cancel();
-    _performanceTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      _updatePerformanceMetrics();
-    });
-  }
-
-  void _updatePerformanceMetrics() {
-    if (!mounted) return;
-
-    // Simple frame rate estimation based on UI updates
-    final now = DateTime.now();
-    if (_lastFrameTime != null) {
-      final timeDiff = now.difference(_lastFrameTime!).inMilliseconds;
-      if (timeDiff > 0) {
-        _currentFPS = 1000 / timeDiff;
-        _frameCount++;
-
-        // Enable low performance mode if FPS is consistently low
-        if (_currentFPS < 15 && _frameCount > 10) {
-          _enableLowPerformanceMode();
-        }
-      }
-    }
-    _lastFrameTime = now;
-  }
-
-  void _enableLowPerformanceMode() {
-    if (!_isLowPerformanceMode) {
-      setState(() {
-        _isLowPerformanceMode = true;
-      });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: const Text('Performance mode enabled for smoother experience'), backgroundColor: Colors.orange.withValues(alpha: 0.8), duration: const Duration(seconds: 3)));
-    }
   }
 
   @override
@@ -589,7 +535,20 @@ class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObse
         if (modelPath == null) {
           return const SizedBox.shrink();
         }
-        return ModelViewer(src: 'file://$modelPath', backgroundColor: Colors.transparent, cameraControls: true);
+
+        // For web platform, keep assets/ path as-is
+        // For mobile platforms, use file:// protocol
+        final String modelSrc = kIsWeb
+            ? modelPath // Web: 'assets/nike_2.glb' - served from build/web/assets/
+            : 'file://$modelPath'; // Mobile: 'file:///path/to/file.glb'
+
+        return ModelViewer(
+          src: modelSrc,
+          backgroundColor: Colors.transparent,
+          cameraControls: true,
+          autoRotate: false,
+          disableZoom: false,
+        );
       },
     );
   }
@@ -713,166 +672,6 @@ class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _build3DModelViewer(String modelPath) {
-    // Comprehensive file validation
-    final validationResult = _validateModelFile(modelPath);
-    if (validationResult != null) {
-      return _buildModelErrorWidget(
-        validationResult['message'] as String,
-        errorType: validationResult['type'] as String,
-        canRetry: validationResult['canRetry'] as bool,
-        onRetry: validationResult['onRetry'] as VoidCallback?,
-      );
-    }
-
-    final file = File(modelPath);
-    final fileSizeBytes = file.lengthSync();
-    final fileSizeMB = fileSizeBytes / (1024 * 1024);
-
-    return SizedBox(
-      height: 300,
-      width: 300,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: GestureDetector(
-          onTap: () => _handleModelTap(),
-          onDoubleTap: () => _handleModelDoubleTap(),
-          onLongPress: () => _handleModelLongPress(),
-          child: Stack(
-            children: [
-              ModelViewer(
-                // Set the source to the local file path
-                src: 'file://$modelPath',
-
-                // Configure for AR overlay experience
-                backgroundColor: const Color(0x00000000), // Transparent background
-                // Enhanced gesture controls
-                cameraControls: true,
-                autoRotate: false, // Let user control rotation manually
-                // Gesture and interaction settings
-                disableZoom: false,
-                disablePan: false, // Allow panning for better control
-                // Loading and performance settings
-                loading: Loading.eager,
-                autoPlay: true,
-
-                // Enhanced camera and interaction settings
-                cameraOrbit: "0deg 75deg 1.5m", // Default camera position
-                fieldOfView: "30deg", // Narrow field for AR effect
-                minCameraOrbit: "auto auto 0.5m", // Minimum zoom distance
-                maxCameraOrbit: "auto auto 5m", // Maximum zoom distance
-                // Performance and optimization settings
-                shadowIntensity: _isLowPerformanceMode ? 0.0 : 0.3,
-                shadowSoftness: _isLowPerformanceMode ? 0.0 : 0.25,
-
-                // Error handling callback
-                onWebViewCreated: (controller) {
-                  _modelLoadStartTime = DateTime.now();
-                  _isModelLoading = true;
-                  debugPrint('ModelViewer WebView created for: ${modelPath.split('/').last}');
-                  debugPrint('File size: ${fileSizeMB.toStringAsFixed(1)} MB');
-                  debugPrint('Performance mode: ${_isLowPerformanceMode ? "Enabled" : "Disabled"}');
-                  _startPerformanceMonitoring();
-                  _showGestureHint();
-
-                  // Simulate model loading completion after a delay
-                  Timer(const Duration(seconds: 2), () {
-                    if (mounted) _onModelLoaded();
-                  });
-                },
-              ),
-
-              // Performance indicators
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Large file warning
-                    if (fileSizeMB > 10)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(4)),
-                        child: Text('Large file (${fileSizeMB.toStringAsFixed(1)}MB)', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                      ),
-
-                    // Performance mode indicator
-                    if (_isLowPerformanceMode)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(4)),
-                        child: const Text('Performance Mode', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                      ),
-
-                    // Loading indicator
-                    if (_isModelLoading)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(4)),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
-                            SizedBox(width: 4),
-                            Text('Loading', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              // Gesture feedback overlay
-              _buildGestureFeedback(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _handleModelTap() {
-    debugPrint('Model tapped - show interaction hint');
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: const Text('Drag to rotate • Pinch to zoom • Double-tap to reset'), duration: const Duration(seconds: 2), backgroundColor: Colors.black.withValues(alpha: 0.8)));
-  }
-
-  void _handleModelDoubleTap() {
-    debugPrint('Model double-tapped - reset position');
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Model position reset'), duration: const Duration(seconds: 1), backgroundColor: Colors.green.withValues(alpha: 0.8)));
-  }
-
-  void _onModelLoaded() {
-    if (_modelLoadStartTime != null) {
-      final loadTime = DateTime.now().difference(_modelLoadStartTime!);
-      debugPrint('Model loaded in ${loadTime.inMilliseconds}ms');
-
-      setState(() {
-        _isModelLoading = false;
-      });
-
-      // Show performance feedback for very slow loads
-      if (loadTime.inSeconds > 5) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Model loaded (${loadTime.inSeconds}s) - Consider using smaller files for better performance'),
-            backgroundColor: Colors.orange.withValues(alpha: 0.8),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  void _handleModelLongPress() {
-    debugPrint('Model long-pressed - show advanced options');
-    _showModelOptions();
-  }
-
   void _showModelOptions() {
     showModalBottomSheet(
       context: context,
@@ -885,193 +684,28 @@ class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObse
             children: [
               const Text('Model Options', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
-              _buildOptionButton(
-                icon: Icons.refresh,
-                title: 'Reset Position',
-                subtitle: 'Return to default view',
+              ListTile(
+                leading: const Icon(Icons.refresh, color: Colors.white),
+                title: const Text('Reset Position', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Return to default view', style: TextStyle(color: Colors.white70)),
                 onTap: () {
                   Navigator.pop(context);
-                  _handleModelDoubleTap();
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Model position reset')));
                 },
               ),
-              _buildOptionButton(
-                icon: Icons.center_focus_strong,
-                title: 'Center Model',
-                subtitle: 'Focus on model center',
+              ListTile(
+                leading: const Icon(Icons.center_focus_strong, color: Colors.white),
+                title: const Text('Center Model', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Focus on model center', style: TextStyle(color: Colors.white70)),
                 onTap: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Model centered')));
-                },
-              ),
-              _buildOptionButton(
-                icon: Icons.help_outline,
-                title: 'Gesture Help',
-                subtitle: 'Show interaction guide',
-                onTap: () {
-                  Navigator.pop(context);
-                  _showGestureHint();
                 },
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildOptionButton({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.white70)),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildGestureFeedback() {
-    return const Positioned(bottom: 8, left: 8, child: Icon(Icons.touch_app, color: Colors.white54, size: 16));
-  }
-
-  void _showGestureHint() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Gestures: Drag = Rotate • Pinch = Zoom • Double-tap = Reset • Long-press = Options'),
-        duration: const Duration(seconds: 3),
-        backgroundColor: Colors.blue.withValues(alpha: 0.8),
-        action: SnackBarAction(label: 'OK', textColor: Colors.white, onPressed: () {}),
-      ),
-    );
-  }
-
-  Map<String, dynamic>? _validateModelFile(String modelPath) {
-    try {
-      final file = File(modelPath);
-
-      // Check if file exists
-      if (!file.existsSync()) {
-        return {'message': 'Model file not found. The file may have been moved or deleted.', 'type': 'file_not_found', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
-      }
-
-      // Check file extension
-      final extension = modelPath.toLowerCase().split('.').last;
-      if (!['glb', 'gltf'].contains(extension)) {
-        return {'message': 'Unsupported file format. Only .glb and .gltf files are supported.', 'type': 'invalid_format', 'canRetry': false, 'onRetry': null};
-      }
-
-      // Check file size limits
-      final fileSizeBytes = file.lengthSync();
-      final fileSizeMB = fileSizeBytes / (1024 * 1024);
-
-      if (fileSizeMB > 50) {
-        return {'message': 'File too large (${fileSizeMB.toStringAsFixed(1)}MB). Files over 50MB are not supported.', 'type': 'file_too_large', 'canRetry': false, 'onRetry': null};
-      }
-
-      // Check if file is corrupted (basic check)
-      if (fileSizeBytes < 100) {
-        return {'message': 'File appears to be corrupted or empty.', 'type': 'corrupted_file', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
-      }
-
-      // Check file permissions
-      try {
-        final bytes = file.readAsBytesSync().take(10).toList();
-        if (bytes.isEmpty) {
-          return {'message': 'Cannot read file. Check file permissions.', 'type': 'permission_denied', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
-        }
-      } catch (e) {
-        return {'message': 'File access error: ${e.toString()}', 'type': 'access_error', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
-      }
-
-      return null; // File is valid
-    } catch (e) {
-      debugPrint('Model validation error: $e');
-      return {'message': 'Unexpected error during file validation: ${e.toString()}', 'type': 'validation_error', 'canRetry': true, 'onRetry': () => _retryModelLoading()};
-    }
-  }
-
-  void _retryModelLoading() {
-    setState(() {
-      _isModelLoading = true;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Retrying model load...'), backgroundColor: Colors.blue.withValues(alpha: 0.8), duration: const Duration(seconds: 1)));
-
-    // Force a rebuild after a short delay
-    Timer(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isModelLoading = false;
-        });
-      }
-    });
-  }
-
-  Widget _buildModelErrorWidget(String message, {required String errorType, required bool canRetry, VoidCallback? onRetry}) {
-    Color errorColor;
-    IconData errorIcon;
-
-    switch (errorType) {
-      case 'file_not_found':
-        errorColor = Colors.orange;
-        errorIcon = Icons.search_off;
-        break;
-      case 'invalid_format':
-        errorColor = Colors.red;
-        errorIcon = Icons.block;
-        break;
-      case 'file_too_large':
-        errorColor = Colors.purple;
-        errorIcon = Icons.storage;
-        break;
-      case 'corrupted_file':
-        errorColor = Colors.yellow;
-        errorIcon = Icons.broken_image;
-        break;
-      case 'permission_denied':
-        errorColor = Colors.amber;
-        errorIcon = Icons.lock;
-        break;
-      default:
-        errorColor = Colors.red;
-        errorIcon = Icons.error_outline;
-    }
-
-    return SizedBox(
-      height: 300,
-      width: 300,
-      child: Container(
-        decoration: BoxDecoration(color: errorColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: errorColor.withValues(alpha: 0.5), width: 2)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(errorIcon, color: errorColor, size: 48),
-              const SizedBox(height: 12),
-              Text('Model Error', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-              if (canRetry && onRetry != null) ...[
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(backgroundColor: errorColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
-                ),
-              ],
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  // Navigate back to load model screen
-                  AppState.instance.selectedModelPath.value = null;
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Returned to model selection'), duration: Duration(seconds: 1)));
-                },
-                child: const Text('Select Different Model', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
