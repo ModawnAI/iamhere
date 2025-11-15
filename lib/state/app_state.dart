@@ -28,6 +28,14 @@ class AppState {
     try {
       print('📦 Starting to preload Nike model...');
 
+      // On web, use asset path directly without file system
+      if (kIsWeb) {
+        print('📦 Web platform detected - using direct asset path');
+        selectedModelPath.value = 'assets/nike_2.glb';
+        print('📦 Nike model path set for web successfully!');
+        return;
+      }
+
       // Get the app's temporary directory
       final tempDir = await getTemporaryDirectory();
       final modelPath = '${tempDir.path}/nike_2.glb';

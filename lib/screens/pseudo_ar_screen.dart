@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -298,7 +299,7 @@ class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObse
         return AlertDialog(
           title: Row(children: [Icon(Icons.warning, color: Colors.orange), const SizedBox(width: 8), const Text('Camera Permission Required')]),
           content: Text(
-            Platform.isIOS
+            (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS)
                 ? 'Camera access is required for AR features. To enable:\n\n'
                     '1. Tap "Open Settings" below\n'
                     '2. Find "Iamhere Demo" in the list\n'

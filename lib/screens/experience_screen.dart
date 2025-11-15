@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:iamhere_demo/data/dummy_data.dart';
 import 'package:iamhere_demo/state/app_state.dart';
@@ -127,11 +127,11 @@ class ExperienceScreen extends StatelessWidget {
                               print('🎥 Camera permission granted! Navigating to AR screen...');
 
                               // Navigate to the appropriate AR screen based on the platform
-                              if (Platform.isIOS) {
+                              if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
                                 // Use ARKit on iOS for a true AR experience
                                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ARKitScreen()));
                               } else {
-                                // Use PseudoArScreen for other platforms (e.g., Android)
+                                // Use PseudoArScreen for other platforms (e.g., Android, Web)
                                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PseudoArScreen()));
                               }
                             } else {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:iamhere_demo/screens/main_screen.dart';
-import 'package:iamhere_demo/services/camera_permission_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,7 +77,7 @@ class _MyAppState extends State<MyApp> {
         ),
 
         // Enhanced card theme
-        cardTheme: CardTheme(color: Colors.white, elevation: 4, shadowColor: Colors.black.withValues(alpha: 0.1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+        cardTheme: CardThemeData(color: Colors.white, elevation: 4, shadowColor: Colors.black.withValues(alpha: 0.1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
 
         // Enhanced text theme
         textTheme: const TextTheme(
