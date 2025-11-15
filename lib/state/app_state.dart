@@ -30,15 +30,11 @@ class AppState {
 
       // On web, use Vercel Blob URL for large files or fallback to small asset
       if (kIsWeb) {
-        print('📦 Web platform detected - checking for Vercel Blob URL');
-        // Get Blob URL from environment variable or use fallback
-        const String blobUrl = String.fromEnvironment(
-          'NIKE_2_GLB_URL',
-          defaultValue: 'nike.glb', // Fallback to smaller model (assets/ prefix added later)
-        );
-        selectedModelPath.value = blobUrl;
-        print('📦 Nike model path set for web: $blobUrl');
-        print('📦 Note: If this shows nike.glb, set NIKE_2_GLB_URL environment variable in Vercel');
+        print('📦 Web platform detected - using web configuration');
+        // The URL will be injected by env.js loaded in index.html
+        // For now, use the smaller model as fallback
+        selectedModelPath.value = 'nike.glb'; // Will be overridden by env.js if available
+        print('📦 Nike model path set for web: nike.glb (check console for env.js override)');
         return;
       }
 

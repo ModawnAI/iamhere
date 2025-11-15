@@ -50,6 +50,9 @@ dependencies:
   # Path provider for accessing app directories
   path_provider: ^2.1.5
 
+  # Web support for JavaScript interop
+  web: ^1.1.0
+
   # ARKit for iOS
   arkit_plugin: ^1.1.2
 
