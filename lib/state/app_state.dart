@@ -28,11 +28,17 @@ class AppState {
     try {
       print('📦 Starting to preload Nike model...');
 
-      // On web, use asset path directly without file system
+      // On web, use Vercel Blob URL for large files or fallback to small asset
       if (kIsWeb) {
-        print('📦 Web platform detected - using direct asset path');
-        selectedModelPath.value = 'assets/nike_2.glb';
-        print('📦 Nike model path set for web successfully!');
+        print('📦 Web platform detected - using Vercel Blob URL');
+        // TODO: Replace with actual Vercel Blob URL after uploading nike_2.glb
+        // For now, use smaller nike.glb that fits within Vercel's 5MB limit
+        const String blobUrl = String.fromEnvironment(
+          'NIKE_2_GLB_URL',
+          defaultValue: 'assets/nike.glb', // Fallback to smaller model
+        );
+        selectedModelPath.value = blobUrl;
+        print('📦 Nike model path set for web: $blobUrl');
         return;
       }
 

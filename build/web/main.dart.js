@@ -70827,9 +70827,9 @@ A.Rq.prototype={
 zI(){var s=0,r=A.L(t.H),q,p=this,o,n
 var $async$zI=A.M(function(a,b){if(a===1)return A.I(b,r)
 while(true)switch(s){case 0:try{A.ct("\ud83d\udce6 Starting to preload Nike model...")
-A.ct("\ud83d\udce6 Web platform detected - using direct asset path")
-p.a.sp("assets/nike_2.glb")
-A.ct("\ud83d\udce6 Nike model path set for web successfully!")
+A.ct("\ud83d\udce6 Web platform detected - using Vercel Blob URL")
+p.a.sp("assets/nike.glb")
+A.ct("\ud83d\udce6 Nike model path set for web: assets/nike.glb")
 s=1
 break}catch(m){o=A.a3(m)
 A.ct("\u274c Error preloading model: "+A.l(o))}case 1:return A.J(q,r)}})
