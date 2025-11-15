@@ -24,7 +24,7 @@ android {
         applicationId = "com.example.iamhere_demo"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21  // Set to 21 for camera and model viewer compatibility
+        minSdk = 24  // ARCore requires minSdk 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -42,3 +42,7 @@ android {
 flutter {
     source = "../.."
 }
+dependencies {
+    implementation("com.google.ar:core:1.39.0")
+}
+

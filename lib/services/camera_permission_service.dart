@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
 
 /// Comprehensive camera permission service
 /// Ensures iOS is always aware this app uses camera
@@ -228,7 +228,7 @@ class CameraPermissionService {
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 16),
-              if (Platform.isIOS) ...[
+              if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
                 const Text('📱 iOS Steps:'),
                 const SizedBox(height: 8),
                 _buildStep('1.', 'Tap "Open Settings" below'),
