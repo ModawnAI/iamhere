@@ -536,10 +536,10 @@ class _PseudoArScreenState extends State<PseudoArScreen> with WidgetsBindingObse
           return const SizedBox.shrink();
         }
 
-        // For web platform, use relative path from web root
+        // For web platform, use the path as-is (could be Blob URL or asset path)
         // For mobile platforms, use file:// protocol
         final String modelSrc = kIsWeb
-            ? 'assets/$modelPath' // Web: 'assets/assets/nike_2.glb' - served from build/web/assets/
+            ? (modelPath.startsWith('http') ? modelPath : 'assets/$modelPath') // Web: Use Blob URL directly or add assets/ prefix
             : 'file://$modelPath'; // Mobile: 'file:///path/to/file.glb'
 
         return ModelViewer(
